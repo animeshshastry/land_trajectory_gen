@@ -37,61 +37,44 @@ void current_pose_callback(const geometry_msgs::PoseStamped & msg)
         }
 }
 
+
 void Generate_Trajectory()
 {
     double x=quad_position[0];
     double y=quad_position[1];
     double z=quad_position[2];
     double psi = atan2(y,x);
+    double vel_des[3];
+
     if (( x*x + y*y ) > ( R0 * R0 * exp( 2*z ) )){
         //const. vel. home-in at const. altitude
-        if (x>0) position_des[0] = x - 0.5*cos(psi);
-        else position_des[0] = x + 0.5*cos(psi);
-
-        if (y>0) position_des[1] = y - 0.5*sin(psi);
-        else position_des[1] = y + 0.5*sin(psi);
-
-        position_des[2] = loiter_alt;
+            double r=x*x+y*y;
+            vel_des[0]=-r*cos(psi);
+            vel_des[1]=-r*sin(psi);
+            vel_des[2]= 0;
+        if (z < 2.0) vel_des[2] = 0.5 + log(sqrt(x*x + y*y)/R0) - z;
     }
-    else if (( x*x + y*y ) > 1.0*1.0){
-        //const. vel. home-in and descend
-        if (x>0) position_des[0] = x - 0.3*cos(psi);
-        else position_des[0] = x + 0.3*cos(psi);
-
-        if (y>0) position_des[1] = y - 0.3*sin(psi);
-        else position_des[1] = y + 0.3*sin(psi);
-
-        position_des[2] = z - 0.1;
-        if (position_des[2] < 1.0) position_des[2] = 1.0;
-        loiter_alt = z;
+    else if (z>0.5){
+            double r=x*x+y*y;
+            vel_des[0]=-r*cos(psi);
+            vel_des[1]=-r*sin(psi);
+            vel_des[2]=-0.5;
     }
-    else if (( x*x + y*y ) > 0.15*0.15){
-        //const. vel. home-in and descend
-        if (x>0) position_des[0] = x - 0.2*cos(psi);
-        else position_des[0] = x + 0.2*cos(psi);
-
-        if (y>0) position_des[1] = y - 0.2*sin(psi);
-        else position_des[1] = y + 0.2*sin(psi);
-
-        position_des[2] = z - 0.1;
-        if (position_des[2] < 0.6) position_des[2] = 0.6;
-        loiter_alt = z;
+        else{
+            //strong descend and forget home-in
+            vel_des[0] = 0;
+            vel_des[1] = 0;
+            vel_des[2] = - 0.6 + z;
     }
-    else if (z > 0.5){
-        //strong home-in and const. vel. descend
-        position_des[0] = 0.0;
-        position_des[1] = 0.0;
-        position_des[2] = z - 0.1;
-        if (position_des[2] < 0.49) position_des[2] = 0.49;
-        loiter_alt = z;
-    }
-    else {
-        //strong descend and forget home-in
-        position_des[0] = x;
-        position_des[1] = y;
-        position_des[2] = 0.0;
-    }
+    //vel calculated
+    double vel_des_mag = 2*sqrt(vel_des[0]*vel_des[0]+vel_des[1]*vel_des[1]+vel_des[2]*vel_des[2]);
+    vel_des[0] = vel_des[0]/vel_des_mag;
+    vel_des[1] = vel_des[1]/vel_des_mag;
+    vel_des[2] = vel_des[2]/vel_des_mag;
 
+    position_des[0] = quad_position[0] + vel_des[0];
+    position_des[1] = quad_position[1] + vel_des[1];
+    position_des[2] = quad_position[2] + vel_des[2];
 }
 
 int main(int argc, char **argv)
