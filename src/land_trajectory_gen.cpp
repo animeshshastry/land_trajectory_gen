@@ -48,14 +48,14 @@ void Generate_Trajectory()
 
     if (( x*x + y*y ) > ( R0 * R0 * exp( 2*z ) )){
         //const. vel. home-in at const. altitude
-            double r=x*x+y*y;
+            double r=sqrt(x*x+y*y);
             vel_des[0]=-r*cos(psi);
             vel_des[1]=-r*sin(psi);
             vel_des[2]= 0;
-        if (z < 2.0) vel_des[2] = 0.5 + log(sqrt(x*x + y*y)/R0) - z;
+        if (z < 2.0) vel_des[2] = 0.5 + log(sqrt(x*x + y*y)/R0) - z + (1/z);
     }
     else if (z>0.5){
-            double r=x*x+y*y;
+            double r=sqrt(x*x+y*y);
             vel_des[0]=-r*cos(psi);
             vel_des[1]=-r*sin(psi);
             vel_des[2]=-0.5;
